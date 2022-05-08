@@ -1,0 +1,233 @@
+---
+title: "DEG_analysis_for_spine_samples"
+output: html_document
+---
+
+necessary libraries are loaded.
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(ggrepel)
+library(RColorBrewer)
+library(DESeq2)
+library(pheatmap)
+```
+
+working directory is set.
+```{r}
+setwd("/Users/onat/Desktop/project/spine/spine_count_data")
+```
+
+count data is loaded.
+```{r}
+data <- read.csv(file = "spine_count_data.csv", sep = ";", header=T,fill=T,row.names = NULL)
+colnames(data) <- c(" ","SRR5714742","SRR5714765","SRR5714766","SRR5714770","SRR5714774","SRR5714740","SRR5714792","SRR5714793","SRR5714794","SRR5714796")
+data2 <- data[,-1]
+rownames(data2) <- make.names(data[,1], unique = T)
+rm(data)
+```
+
+non zero gene matrix is created.
+```{r}
+no_zero_genes_mtx <- data2[!rowSums(data2==0), ]
+```
+
+
+NA values are converted to 0 and filter out lowly expressed transcripts** 
+```{r}
+
+data2[!rowSums(data2<100), ]
+t(data2[!rowSums(data2<5000),][1,])
+data2[is.na(data2)] <- 0
+data2 <- data2[apply(data2, 1, function(x) length(x[x >= 5]) >= 5),]
+```
+
+meta data is loaded.
+```{r}
+tissue <- c("spine", "spine", "spine","spine", "spine","turbinate" ,"turbinate", "turbinate","turbinate", "turbinate")
+condition <- c( "spine", "spine", "spine", "spine", "spine","normal", "normal", "normal","normal", "normal")
+metadata <- data.frame(tissue, condition)
+rownames(metadata) <- c("SRR5714742","SRR5714765","SRR5714766","SRR5714770","SRR5714774","SRR5714740","SRR5714792","SRR5714793","SRR5714794","SRR5714796")
+
+```
+
+sample names match in both files.
+```{r}
+all(rownames(metadata) == colnames(data2))
+```
+
+DESeq2Dataset object is created. 
+```{r}
+deseq2Obj <- DESeqDataSetFromMatrix(countData = data2,
+                                    colData = metadata,
+                                    design = ~ condition)
+deseq2Obj <- estimateSizeFactors(deseq2Obj)
+sizeFactors(deseq2Obj)
+
+```
+
+normalized counts.
+```{r}
+#sizeFactors(deseq20bj)
+normalized_counts <- counts(deseq2Obj, normalize=TRUE)
+View(normalized_counts)
+
+data.frame(normalized_counts)
+
+```
+
+variance stabilizing transformation which transforms counts for data visualization
+```{r}
+vsd_data <- vst(deseq2Obj, blind = TRUE)
+```
+
+hierarchical clustering with correlation heatmaps
+```{r}
+mat.vsd_data <- assay(vsd_data)
+#her bir örnek çifti arasındaki ikili kolerasyon değerleini hesapladım.
+cor.vsd_data <- cor(mat.vsd_data)
+View(cor.vsd_data)
+pheatmap(cor.vsd_data, annotation = dplyr::select(metadata, condition))
+
+
+```
+
+PCA
+```{r}
+plotPCA(vsd_data, intgroup="condition")
+```
+
+
+DE analysis
+```{r}
+deseq2Obj_DE <- DESeq(deseq2Obj)
+
+```
+
+DESeq2 model: mean-variance relation
+```{r}
+mean_counts <- apply(data2, 1, mean)
+variance_counts <-  apply(data2, 1, var)
+mean.var.df <- data.frame(mean_counts, variance_counts)
+library(ggplot2)
+ggplot(mean.var.df) +
+  geom_point(aes(x=mean_counts, y=variance_counts)) +
+  scale_y_log10() +
+  scale_x_log10() +
+  xlab("Mean counts per gene") +
+  ylab("Variance per gene")
+```
+
+dispersion graph
+```{r}
+plotDispEsts(deseq2Obj_DE)
+
+```
+
+
+extract results table (alpha threshold is set to 0.05)
+```{r}
+results(deseq2Obj_DE, alpha = 0.05)
+
+```
+
+groups that we wish to compare are determined to deseq2 and MA plot is geneterated.
+```{r}
+DE_result <-results(deseq2Obj_DE, 
+                    contrast = c("condition", "spine", "normal"),
+                    alpha = 0.05)
+
+plotMA(DE_result, ylim=c(-10,10)) #önemli ölçüde ifadesi değişen genler mavi, gri renkler ifadesi değişmeyen genler
+
+```
+
+shrunken LFC 
+```{r}
+#The apeglm publication demonstrates that 'apeglm' and 'ashr' outperform the original 'normal' shrinkage estimator.
+DE_result <- lfcShrink(deseq2Obj_DE,
+                       contrast = c("condition", "spine", "normal"),
+                       res=DE_result,
+                       type = "normal") 
+summary(DE_result)
+plotMA(DE_result, ylim=c(-10,10)) #önemli ölçüde ifadesi değişen genler mavi, gri renkler ifadesi değişmeyen genler
+mcols(DE_result)
+head(DE_result, n=10)
+
+```
+
+
+DE results are arranged.
+```{r}
+DE_result <-results(deseq2Obj_DE, 
+                    contrast = c("condition", "spine", "normal"),
+                    alpha = 0.05, 
+                    lfcThreshold = 0.58)
+summary(DE_result)
+```
+
+ensgene varibles are set. 
+```{r}
+data3 <- data.frame(DE_result)
+data3 <- rownames_to_column(data3, var = "ensgene")
+data3_res_sig <- subset(data3, padj<0.05)
+sig_norm_counts_data <- normalized_counts[data3_res_sig$ensgene,]
+```
+
+
+heatmap
+```{r}
+heat_colors <- brewer.pal(6, "YlOrRd")
+pheatmap(sig_norm_counts_data,
+         color = heat_colors,
+         cluster_rows = T,
+         show_rownames = F,
+         annotation = select(metadata, condition),
+         scale = "row")
+```
+
+volcano plot
+```{r}
+data3 <- data3 %>%
+  mutate(threshold=padj <0.05)
+
+ggplot(data3) +
+  geom_point(aes(x=log2FoldChange, y=-log10(padj), color=threshold)) +
+  labs(x="log2 fold change", y="-log10 adjusted p-value") +
+  ylim(0,15) +
+  theme(legend.position = "none",
+        plot.title = element_text(size=rel(1.5), hjust = 0.5),
+        axis.title = element_text(size=rel(1.25)))
+```
+
+expression plots for col2a1 and fn1 genes
+```{r}
+
+plotCounts(deseq2Obj, gene="ENSG00000139219")
+plotCounts(deseq2Obj
+, gene="ENSG00000115414")
+```
+
+
+expression plot for top 20 significant DE genes.
+```{r}
+top20 <- data.frame(sig_norm_counts_data)[1:20, ] %>%
+  rownames_to_column("ensgene")
+
+top20_gathered <- gather(top20, key = "samplename", value = "normalized_counts", 2:7)
+
+top20_gathered_meta <- inner_join(top20_gathered, 
+                                  rownames_to_column(metadata, var="samplename"),
+                                  by="samplename")
+
+ggplot(top20_gathered_meta) +
+  geom_point(aes(x=ensgene, y=normalized_counts, color=condition)) +
+  scale_y_log10() +
+  xlab("genes") +
+  ylab("normalized counts") +
+  ggtitle("Top 20 Significant DE Genes") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
