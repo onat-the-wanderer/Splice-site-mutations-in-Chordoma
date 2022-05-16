@@ -4,7 +4,7 @@ Discovery of significant mutations around splice sites in differentially expesse
 
 ## PIPELINE
 
-Commands that were used in this project from serveral different tools can be seen below.
+Commands from serveral tools which were used in this project can be seen below.
 
 ### SRA toolkit
 
