@@ -4,6 +4,11 @@ Discovery of significant mutations around splice sites in differentially express
 
 ## PIPELINE
 
+
+![Blank diagram](https://user-images.githubusercontent.com/71891536/169393696-c5ebee75-b231-447f-9cca-07b8b8688548.png)
+
+
+
 Commands from serveral tools which were used in this project can be seen below.
 
 ### SRA toolkit
