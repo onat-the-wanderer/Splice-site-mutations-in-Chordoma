@@ -1,6 +1,6 @@
 # Chordoma Splice Site Mutations
 
-Discovery of significant mutations around splice sites in differentially expessed genes in Chordoma transcriptome data using machine learning tools.
+Discovery of significant mutations around splice sites in differentially expressed genes in Chordoma transcriptome data using machine learning tools.
 
 ## PIPELINE
 
