@@ -5,7 +5,7 @@ Discovery of significant mutations around splice sites in differentially express
 ## PIPELINE
 
 
-![Blank diagram](https://user-images.githubusercontent.com/71891536/169393696-c5ebee75-b231-447f-9cca-07b8b8688548.png)
+![Blank diagram](https://user-images.githubusercontent.com/71891536/169394437-3ecdbf73-9acc-4c58-8888-76537fdb4a8e.png)
 
 
 
