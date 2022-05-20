@@ -9,7 +9,7 @@ Discovery of significant mutations around splice sites in differentially express
 
 
 
-Commands from serveral tools which were used in this project can be seen below.
+Several commands that were used in this project can be seen below.
 
 ### SRA toolkit
 
