@@ -34,7 +34,7 @@ samtools sort -o <file.sorted.bam> <file.bam>
 
 samtools index <file.sorted.bam >
 
-samtools mpileup -g -f <ref.fa> <file.sorted.bam> > <file.raw.bcf> #this is can also be performed with bcftools.
+samtools mpileup -g -f <ref.fa> <file.sorted.bam> > <file.raw.bcf>
 
 samtools view -h <sample.sorted.bam> <gene coordinates> -o <gene-name_sample-name.bam>
 
