@@ -7,7 +7,7 @@ Discovery of significant mutations around splice sites in differentially express
 
 ![Blank diagram](https://user-images.githubusercontent.com/71891536/169394437-3ecdbf73-9acc-4c58-8888-76537fdb4a8e.png)
 
-
+(the black line which represents intronic coverage workflow, should be started from bcftools)
 
 Several commands that were used in this project can be seen below.
 
